@@ -32,7 +32,7 @@ class ActionSpaceProcessor:
     # (Box(a), Discrete(2)) -> Box(a+2)
     # etc
     # does not yet work with discrete dists of n>2
-    def __init__(self, action_space: gym.spaces.Tuple, convert) -> None:
+    def __init__(self, action_space, convert) -> None:
 
         self._original_action_space = action_space
         self._convert = convert

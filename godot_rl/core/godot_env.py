@@ -47,9 +47,13 @@ class GodotEnv:
         self.num_envs = None
         self._handshake()
         self._get_env_info()
-        # sf2 requires a tuple action space
-        self._tuple_action_space = spaces.Tuple([v for _, v in self._action_space.items()])
-        self.action_space_processor = ActionSpaceProcessor(self._tuple_action_space, convert_action_space)
+        
+        if len(self._action_space) > 1:
+            self._starting_action_space = spaces.Tuple([v for _, v in self._action_space.items()])
+        else:
+            self._starting_action_space = list(self._action_space.values())[0]
+
+        self.action_space_processor = ActionSpaceProcessor(self._starting_action_space, convert_action_space)
 
         atexit.register(self._close)
 
@@ -85,6 +89,7 @@ class GodotEnv:
         assert os.path.exists(filename)
 
     def from_numpy(self, action, order_ij=False):
+
         # handles dict to tuple actions
         result = []
 
@@ -92,7 +97,9 @@ class GodotEnv:
             env_action = {}
 
             for j, k in enumerate(self._action_space.keys()):
-                if order_ij == True:
+                if len(action.shape) == 1:
+                    v = action[i]
+                elif order_ij == True:
                     v = action[i][j]
                 else:
                     v = action[j][i]

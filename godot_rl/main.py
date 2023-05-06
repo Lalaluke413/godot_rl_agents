@@ -32,7 +32,7 @@ except ImportError as e:
 
 
 try:
-    from godot_rl.wrappers.stable_baselines_wrapper import stable_baselines_training
+    from godot_rl.wrappers.stable_baselines_wrapper import stable_baselines_training, stable_baselines_evaluate
 except ImportError as e:
     print("Error: ", e)
     def stable_baselines_training(args, extras):
@@ -70,6 +70,7 @@ def get_args():
     parser.add_argument("--num_gpus", default=None, type=int, help="Number of GPUs to use [only for rllib]")
     parser.add_argument("--experiment_name", default=None, type=str, help="The name of the experiment [only for rllib]")
     parser.add_argument("--viz", default=False, action="store_true", help="Whether to visualize one process")
+    parser.add_argument("--load_sb3", default=None, type=str, help="the location of a sb3 model to load")
 
     return parser.parse_known_args()
 
@@ -79,7 +80,10 @@ def main():
     if args.trainer == "rllib":
         training_function = rllib_training
     elif args.trainer == "sb3":
-        training_function = stable_baselines_training
+        if args.load_sb3:
+            training_function = stable_baselines_evaluate
+        else:
+            training_function = stable_baselines_training
     elif args.trainer == "sf":
         if args.eval:
             training_function = sample_factory_enjoy

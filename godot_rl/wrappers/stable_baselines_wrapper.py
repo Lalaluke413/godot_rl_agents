@@ -6,10 +6,12 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from godot_rl.core.godot_env import GodotEnv
 from godot_rl.core.utils import lod_to_dol
 
+import torch
+
 
 class StableBaselinesGodotEnv(VecEnv):
     def __init__(self, env_path=None, **kwargs):
-        self.env = GodotEnv(env_path=env_path, convert_action_space=True, **kwargs)
+        self.env = GodotEnv(env_path=env_path, convert_action_space=False, **kwargs)
         self._check_valid_action_space()
 
     def _check_valid_action_space(self):
@@ -69,18 +71,41 @@ class StableBaselinesGodotEnv(VecEnv):
         raise NotImplementedError()
 
 
-def stable_baselines_training(args, extras, n_steps=200000):
+def stable_baselines_training(args, extras, n_steps=1000000):
     # TODO: Add cla etc for sb3
     env = StableBaselinesGodotEnv(env_path=args.env_path, show_window=args.viz, speedup=args.speedup)
 
     model = PPO(
         "MultiInputPolicy",
         env,
-        ent_coef=0.0001,
+        ent_coef=0.001,
         verbose=2,
-        n_steps=32,
+        n_steps=4096,
+        use_sde=False,
+        normalize_advantage=False,
+        learning_rate=0.0003,
+        n_epochs=5,
+        gamma=0.99,
+        vf_coef=.9,
         tensorboard_log="logs/log",
+        policy_kwargs={
+            'activation_fn': torch.nn.ReLU,
+            'net_arch': [1024, 256, 128],
+        },
     )
+    model.learn(n_steps)
+
+    model.save("logs/models/PPO")
+
+    print("closing env")
+    env.close()
+
+def stable_baselines_evaluate(args, extras, n_steps=100000):
+
+    env = StableBaselinesGodotEnv(env_path=args.env_path, show_window=args.viz, speedup=args.speedup)
+
+    model = PPO.load(args.load_sb3, env)
+
     model.learn(n_steps)
 
     print("closing env")
